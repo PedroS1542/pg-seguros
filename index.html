@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f172a">
+<title>PG Seguros — v5.2</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="login" class="login-page">
+  <div class="login-glow glow-one"></div><div class="login-glow glow-two"></div>
+  <div class="login-card">
+    <div class="login-logo"><span>🛡</span></div>
+    <div class="eyebrow">GESTÃO PROFISSIONAL</div>
+    <h1>PG Seguros</h1>
+    <p>Tenha sua carteira organizada, visual e sob controle.</p>
+    <form id="loginForm">
+      <label>Usuário<input id="username" placeholder="Digite seu usuário" autocomplete="username" required></label>
+      <label>Senha<input id="password" type="password" placeholder="Digite sua senha" autocomplete="current-password" required></label>
+      <button class="login-button">Entrar no sistema <span>→</span></button>
+      <small id="loginError"></small>
+    </form>
+    <div class="demo">Acesso: <b>pgseguros</b> / <b>PgBc@2027</b></div>
+  </div>
+</div>
+
+<div id="app" class="app hidden">
+  <aside>
+    <div class="brand"><div class="brand-mark">🛡</div><div><strong>PG Seguros</strong><small>GESTÃO PROFISSIONAL</small></div></div>
+    <div class="side-label">MENU PRINCIPAL</div>
+    <nav>
+      <button class="nav active" data-page="dashboard"><span>⌂</span> Dashboard</button>
+      <button class="nav" data-page="seguros"><span>▤</span> Seguros</button>
+      <button class="nav" data-page="novo"><span>＋</span> Novo seguro</button>
+    </nav>
+    <div class="side-tip"><div class="tip-icon">✓</div><div><b>Carteira em dia</b><small>Acompanhe as próximas renovações pelo painel.</small></div></div>
+    <div class="sidebar-footer"><div class="avatar">PG</div><div><b>Corretor</b><small>Acesso completo</small></div><button id="logout" title="Sair">↪</button></div>
+  </aside>
+
+  <main>
+    <header>
+      <div class="page-heading"><div class="mobile-brand">🛡</div><div><div class="breadcrumb">GESTÃO / <span id="crumb">DASHBOARD</span></div><h2 id="pageTitle">Dashboard</h2><p id="pageSubtitle">Visão geral da sua carteira de seguros</p></div></div>
+      <button class="primary" id="quickNew"><span>＋</span> Novo seguro</button>
+    </header>
+
+    <section id="dashboard" class="page">
+      <div class="welcome"><div><span class="eyebrow">VISÃO GERAL</span><h3>Olá, PG Seguros 👋</h3><p>Acompanhe seus seguros e não deixe nenhuma renovação passar.</p></div><div class="today"><span>HOJE</span><b id="todayDate">—</b></div></div>
+      <div class="dashboard-kpis">
+        <div class="mini-kpi"><div class="mini-icon blue">✓</div><div><span>Seguros ativos</span><strong id="activeCount">0</strong></div></div>
+        <div class="mini-kpi warning-kpi"><div class="mini-icon yellow">!</div><div><span>Renovam este mês</span><strong id="renewalCount">0</strong></div></div>
+        <div class="mini-kpi"><div class="mini-icon purple">◷</div><div><span>Próximos 30 dias</span><strong id="next30Count">0</strong></div></div>
+        <div class="mini-kpi"><div class="mini-icon gray">↗</div><div><span>Último cadastro</span><strong id="lastClient">—</strong></div></div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="panel priority-panel"><div class="panel-head"><div><h3>Renovações prioritárias</h3><p>Clientes que merecem sua atenção primeiro</p></div><span class="panel-badge warning">ATENÇÃO</span></div><div id="upcomingRenewals"></div></div>
+        <div class="panel"><div class="panel-head"><div><h3>Visão das renovações</h3><p>Distribuição dos próximos meses</p></div><span class="panel-badge">PLANEJAMENTO</span></div><div id="renewalBars" class="renewal-bars"></div></div>
+      </div>
+      <div class="panel dashboard-recent"><div class="panel-head"><div><h3>Atividade recente</h3><p>Os últimos seguros adicionados à carteira</p></div><button class="text-button" onclick="showPage('seguros')">Ver carteira →</button></div><div id="recent"></div></div>
+    </section>
+
+    <section id="seguros" class="page hidden">
+      <div class="panel list-panel">
+        <div class="panel-head list-head"><div><h3>Carteira de seguros</h3><p>Pesquise, filtre e gerencie seus clientes.</p></div><span id="resultCount" class="result-count">0 registros</span></div>
+        <div class="toolbar"><div class="search-box"><span>⌕</span><input id="search" placeholder="Buscar por cliente, telefone, seguradora ou ramo..."><select id="filterInsurer"><option value="">Todas as seguradoras</option><option>HDI Digital</option><option>Bradesco</option><option>Porto</option><option>Yelum</option><option>Mapfre</option><option>Suhai</option><option>Zurich</option><option>Azul</option><option>Itaú</option><option>Mitsui</option></select><select id="filterBranch"><option value="">Todos os ramos</option><option>Auto</option><option>Caminhão</option><option>Moto</option><option>Celular</option><option>Empresa</option><option>Vida</option><option>Residência</option><option>Responsabilidade Civil</option><option>Equipamentos</option></select></div><select id="filterRenewal"><option value="">Todos os meses</option><option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option><option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option><option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option></select><select id="filterStatus"><option value="">Todos os status</option><option value="Ativo">Ativo</option><option value="A renovar">A renovar</option><option value="Cancelado">Cancelado</option></select></div>
+        <div class="tableWrap"><table><thead><tr><th>CLIENTE</th><th>TELEFONE</th><th>SEGURADORA</th><th>RAMO</th><th>PRÊMIO TOTAL</th><th>RENOVAÇÃO</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody id="tableBody"></tbody></table></div>
+        <div id="empty" class="empty hidden"><div>⌕</div><b>Nenhum seguro encontrado</b><span>Tente mudar os filtros ou cadastrar um novo seguro.</span></div>
+      </div>
+    </section>
+
+    <section id="novo" class="page hidden">
+      <div class="panel form-panel"><div class="form-head"><div class="form-icon">＋</div><div><h3 id="formTitle">Cadastrar seguro</h3><p>Preencha os dados abaixo para manter sua carteira organizada.</p></div></div>
+        <form id="insuranceForm"><input type="hidden" id="editId">
+          <div class="section-title">Informações do seguro</div>
+          <div class="form-grid">
+            <label>Cliente<input id="client" required placeholder="Nome completo do cliente"></label>
+            <label>Telefone<input id="phone" type="tel" placeholder="(00) 00000-0000"></label>
+            <label>Seguradora<select id="insurer" required><option value="">Selecione a seguradora</option><option>HDI Digital</option><option>Bradesco</option><option>Porto</option><option>Yelum</option><option>Mapfre</option><option>Suhai</option><option>Zurich</option><option>Azul</option><option>Itaú</option><option>Mitsui</option></select></label>
+            <label>Ramo<select id="branch" required><option value="">Selecione o ramo</option><option>Auto</option><option>Caminhão</option><option>Moto</option><option>Celular</option><option>Empresa</option><option>Vida</option><option>Residência</option><option>Responsabilidade Civil</option><option>Equipamentos</option></select></label>
+            <label>Valor do seguro<input id="value" type="number" min="0" step="0.01" required placeholder="0,00"></label>
+            <label>Início da vigência<input id="startDate" type="date" required></label>
+            <label>Final da vigência<input id="endDate" type="date" required></label>
+</div>
+          <div class="section-title spaced">Sinistro e endosso</div>
+          <div class="form-grid">
+            <label>Teve sinistro?<select id="claim"><option>Não</option><option>Sim</option></select></label>
+            <label>Teve endosso?<select id="endorsement"><option>Não</option><option>Sim</option></select></label>
+            <label>Valor do endosso<input id="endorsementValue" type="number" min="0" step="0.01" placeholder="0,00"></label>
+            <label>Tipo do endosso<select id="endorsementType"><option>Pagar</option><option>Restituir</option></select></label>
+          </div>
+          <div class="section-title spaced">Status do seguro</div>
+          <div class="form-grid"><label>Status<select id="manualStatus"><option value="Ativo">Ativo</option><option value="Cancelado">Cancelado</option></select></label></div>
+          <div class="section-title spaced">Observações</div><label><textarea id="note" placeholder="Adicione uma observação importante sobre o cliente ou o seguro..."></textarea></label>
+          <div class="status-info"><span class="dot red"></span><span><b>Status:</b> ao cadastrar um seguro novo ele fica <b>Ativo</b> (verde). Quando chegar o mês da renovação, passa para <b>A renovar</b> (amarelo) e aparece a opção <b>Marcar renovado</b>. Após renovar, volta para Ativo.</span></div>
+          <div class="actions"><button type="button" class="secondary" id="cancelEdit">Cancelar</button><button type="submit" class="primary"><span>✓</span> Salvar seguro</button></div>
+        </form>
+      </div>
+    </section>
+    <footer>PG Seguros <span>•</span> versão 5.2</footer>
+  </main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
