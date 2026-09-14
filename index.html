@@ -3,31 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#0f172a">
-<title>PG Seguros — v5.2</title>
+<meta name="theme-color" content="#0f4c9b">
+<link rel="icon" type="image/png" href="favicon-pg-seguros.png">
+<title>PG Seguros</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="login" class="login-page">
   <div class="login-glow glow-one"></div><div class="login-glow glow-two"></div>
   <div class="login-card">
-    <div class="login-logo"><span>🛡</span></div>
+    <img class="login-logo-img" src="logo-pg-seguros.png" alt="PG Seguros — Corretora de Seguros">
     <div class="eyebrow">GESTÃO PROFISSIONAL</div>
-    <h1>PG Seguros</h1>
-    <p>Tenha sua carteira organizada, visual e sob controle.</p>
+    <h1>Bem-vindo ao PG Seguros</h1>
+    <p>Acesse sua conta para gerenciar seus seguros de forma simples e segura.</p>
     <form id="loginForm">
       <label>Usuário<input id="username" placeholder="Digite seu usuário" autocomplete="username" required></label>
       <label>Senha<input id="password" type="password" placeholder="Digite sua senha" autocomplete="current-password" required></label>
       <button class="login-button">Entrar no sistema <span>→</span></button>
       <small id="loginError"></small>
     </form>
-    <div class="demo">Acesso: <b>pgseguros</b> / <b>PgBc@2027</b></div>
   </div>
 </div>
 
 <div id="app" class="app hidden">
   <aside>
-    <div class="brand"><div class="brand-mark">🛡</div><div><strong>PG Seguros</strong><small>GESTÃO PROFISSIONAL</small></div></div>
+    <div class="brand"><div class="brand-logo-wrap"><img src="logo-pg-seguros.png" alt="PG Seguros"></div></div>
     <div class="side-label">MENU PRINCIPAL</div>
     <nav>
       <button class="nav active" data-page="dashboard"><span>⌂</span> Dashboard</button>
@@ -35,12 +35,12 @@
       <button class="nav" data-page="novo"><span>＋</span> Novo seguro</button>
     </nav>
     <div class="side-tip"><div class="tip-icon">✓</div><div><b>Carteira em dia</b><small>Acompanhe as próximas renovações pelo painel.</small></div></div>
-    <div class="sidebar-footer"><div class="avatar">PG</div><div><b>Corretor</b><small>Acesso completo</small></div><button id="logout" title="Sair">↪</button></div>
+    <div class="sidebar-footer"><div class="avatar"><img src="favicon-pg-seguros.png" alt="PG Seguros"></div><div><b>Corretor</b><small>Acesso completo</small></div><button id="logout" title="Sair">↪</button></div>
   </aside>
 
   <main>
     <header>
-      <div class="page-heading"><div class="mobile-brand">🛡</div><div><div class="breadcrumb">GESTÃO / <span id="crumb">DASHBOARD</span></div><h2 id="pageTitle">Dashboard</h2><p id="pageSubtitle">Visão geral da sua carteira de seguros</p></div></div>
+      <div class="page-heading"><div class="mobile-brand"><img src="favicon-pg-seguros.png" alt="PG Seguros"></div><div><div class="breadcrumb">GESTÃO / <span id="crumb">DASHBOARD</span></div><h2 id="pageTitle">Dashboard</h2><p id="pageSubtitle">Visão geral da sua carteira de seguros</p></div></div>
       <button class="primary" id="quickNew"><span>＋</span> Novo seguro</button>
     </header>
 
@@ -97,7 +97,7 @@
         </form>
       </div>
     </section>
-    <footer>PG Seguros <span>•</span> versão 5.2</footer>
+    <footer>PG Seguros <span>•</span> versão 5.5</footer>
   </main>
 </div>
 <script src="app.js"></script>
