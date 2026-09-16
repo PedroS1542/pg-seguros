@@ -7,7 +7,6 @@
 <link rel="icon" type="image/png" href="favicon-pg-seguros.png">
 <title>PG Seguros</title>
 <link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 <div id="login" class="login-page">
@@ -32,8 +31,12 @@
     <div class="side-label">MENU PRINCIPAL</div>
     <nav>
       <button class="nav active" data-page="dashboard"><span>⌂</span> Dashboard</button>
+      <button class="nav" data-page="clientes"><span>♙</span> Clientes</button>
       <button class="nav" data-page="seguros"><span>▤</span> Seguros</button>
       <button class="nav" data-page="novo"><span>＋</span> Novo seguro</button>
+      <button class="nav" data-page="alertas"><span>!</span> Alertas</button>
+      <button class="nav" data-page="relatorios"><span>▥</span> Relatórios</button>
+      <button class="nav" data-page="financeiro"><span>R$</span> Financeiro</button>
     </nav>
     <div class="side-tip"><div class="tip-icon">✓</div><div><b>Carteira em dia</b><small>Acompanhe as próximas renovações pelo painel.</small></div></div>
     <div class="sidebar-footer"><div class="avatar"><img src="favicon-pg-seguros.png" alt="PG Seguros"></div><div><b>Corretor</b><small>Acesso completo</small></div><button id="logout" title="Sair">↪</button></div>
@@ -42,7 +45,7 @@
   <main>
     <header>
       <div class="page-heading"><div class="mobile-brand"><img src="favicon-pg-seguros.png" alt="PG Seguros"></div><div><div class="breadcrumb">GESTÃO / <span id="crumb">DASHBOARD</span></div><h2 id="pageTitle">Dashboard</h2><p id="pageSubtitle">Visão geral da sua carteira de seguros</p></div></div>
-      <div class="header-actions"><button class="secondary" id="importExcel"><span>⇩</span> Importar Excel</button><button class="primary" id="quickNew"><span>＋</span> Novo seguro</button></div>
+      <button class="primary" id="quickNew"><span>＋</span> Novo seguro</button>
     </header>
 
     <section id="dashboard" class="page">
@@ -58,15 +61,44 @@
         <div class="panel priority-panel"><div class="panel-head"><div><h3>Renovações prioritárias</h3><p>Clientes que merecem sua atenção primeiro</p></div><span class="panel-badge warning">ATENÇÃO</span></div><div id="upcomingRenewals"></div></div>
         <div class="panel"><div class="panel-head"><div><h3>Visão das renovações</h3><p>Distribuição dos próximos meses</p></div><span class="panel-badge">PLANEJAMENTO</span></div><div id="renewalBars" class="renewal-bars"></div></div>
       </div>
+      <div class="dashboard-grid secondary-grid">
+        <div class="panel"><div class="panel-head"><div><h3>Central de alertas</h3><p>Renovações que precisam de atenção</p></div><span class="panel-badge warning">ALERTAS</span></div><div id="renewalAlerts" class="alert-list"></div></div>
+        <div class="panel"><div class="panel-head"><div><h3>Seguros por ramo</h3><p>Distribuição da carteira</p></div><span class="panel-badge">CARTEIRA</span></div><div id="branchBars" class="renewal-bars"></div></div>
+      </div>
       <div class="panel dashboard-recent"><div class="panel-head"><div><h3>Atividade recente</h3><p>Os últimos seguros adicionados à carteira</p></div><button class="text-button" onclick="showPage('seguros')">Ver carteira →</button></div><div id="recent"></div></div>
     </section>
 
     <section id="seguros" class="page hidden">
       <div class="panel list-panel">
         <div class="panel-head list-head"><div><h3>Carteira de seguros</h3><p>Pesquise, filtre e gerencie seus clientes.</p></div><span id="resultCount" class="result-count">0 registros</span></div>
-        <div class="toolbar"><div class="search-box"><span>⌕</span><input id="search" placeholder="Buscar por cliente, telefone, seguradora ou ramo..."><select id="filterInsurer"><option value="">Todas as seguradoras</option><option>HDI Digital</option><option>Bradesco</option><option>Porto</option><option>Yelum</option><option>Mapfre</option><option>Suhai</option><option>Zurich</option><option>Azul</option><option>Itaú</option><option>Mitsui</option></select><select id="filterBranch"><option value="">Todos os ramos</option><option>Auto</option><option>Caminhão</option><option>Moto</option><option>Celular</option><option>Empresa</option><option>Vida</option><option>Residência</option><option>Responsabilidade Civil</option><option>Equipamentos</option></select></div><select id="filterRenewal"><option value="">Todos os meses</option><option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option><option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option><option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option></select><select id="filterStatus"><option value="">Todos os status</option><option value="Ativo">Ativo</option><option value="A renovar">A renovar</option><option value="Cancelado">Cancelado</option></select></div>
-        <div class="tableWrap"><table><thead><tr><th>CLIENTE</th><th>TELEFONE</th><th>SEGURADORA</th><th>RAMO</th><th>PRÊMIO TOTAL</th><th>RENOVAÇÃO</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody id="tableBody"></tbody></table></div>
+        <div class="toolbar"><div class="search-box"><span>⌕</span><input id="search" placeholder="Buscar por cliente, telefone, seguradora ou ramo..."><select id="filterInsurer"><option value="">Todas as seguradoras</option><option>HDI Digital</option><option>Bradesco</option><option>Porto</option><option>Yelum</option><option>Mapfre</option><option>Suhai</option><option>Zurich</option><option>Azul</option><option>Itaú</option><option>Mitsui</option></select><select id="filterBranch"><option value="">Todos os ramos</option><option>Auto</option><option>Caminhão</option><option>Moto</option><option>Celular</option><option>Empresa</option><option>Vida</option><option>Residência</option><option>Responsabilidade Civil</option><option>Equipamentos</option></select></div><select id="filterRenewal"><option value="">Todos os meses</option><option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option><option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option><option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option></select><select id="filterStatus"><option value="">Todos os status</option><option value="Ativo">Ativo</option><option value="A renovar">A renovar</option><option value="Cancelado">Cancelado</option></select><div class="backup-actions"><button class="secondary small" id="exportBackup">⬇ Backup</button><button class="secondary small" id="importBackupBtn">⬆ Restaurar</button><input id="importBackup" type="file" accept="application/json" hidden></div></div>
+        <div class="tableWrap"><table><thead><tr><th>CLIENTE</th><th>TELEFONE</th><th>SEGURADORA</th><th>RAMO</th><th>VALOR TOTAL</th><th>RENOVAÇÃO</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody id="tableBody"></tbody></table></div>
         <div id="empty" class="empty hidden"><div>⌕</div><b>Nenhum seguro encontrado</b><span>Tente mudar os filtros ou cadastrar um novo seguro.</span></div>
+      </div>
+    </section>
+
+    <section id="clientes" class="page hidden">
+      <div class="panel list-panel">
+        <div class="panel-head list-head"><div><h3>Clientes</h3><p>Uma visão completa dos clientes e seus seguros.</p></div><span id="clientCount" class="result-count">0 clientes</span></div>
+        <div class="toolbar"><div class="search-box"><span>⌕</span><input id="clientSearch" placeholder="Buscar cliente, CPF/CNPJ, telefone ou e-mail..."></div></div>
+        <div id="clientsGrid" class="clients-grid"></div>
+      </div>
+    </section>
+
+    <section id="alertas" class="page hidden">
+      <div class="panel list-panel"><div class="panel-head"><div><h3>Central de alertas</h3><p>Acompanhe as renovações que exigem ação.</p></div></div><div id="alertsPage" class="alert-page-grid"></div></div>
+    </section>
+
+    <section id="relatorios" class="page hidden">
+      <div class="panel list-panel"><div class="panel-head"><div><h3>Relatórios</h3><p>Resumo operacional da corretora.</p></div><button class="primary" id="printReport">🖨 Imprimir relatório</button></div>
+        <div class="report-kpis" id="reportKpis"></div><div class="report-grid"><div class="panel inner-panel"><h3>Por seguradora</h3><div id="reportInsurers"></div></div><div class="panel inner-panel"><h3>Por ramo</h3><div id="reportBranches"></div></div></div>
+      </div>
+    </section>
+
+    <section id="financeiro" class="page hidden">
+      <div class="panel list-panel"><div class="panel-head"><div><h3>Financeiro</h3><p>Valores dos seguros, endossos e condições de pagamento.</p></div></div>
+        <div class="report-kpis" id="financeKpis"></div>
+        <div class="tableWrap"><table><thead><tr><th>CLIENTE</th><th>VALOR DO SEGURO</th><th>ENDOSSO</th><th>VALOR TOTAL</th><th>PAGAMENTO</th><th>PARCELAS</th></tr></thead><tbody id="financeBody"></tbody></table></div>
       </div>
     </section>
 
@@ -77,6 +109,8 @@
           <div class="form-grid">
             <label>Cliente<input id="client" required placeholder="Nome completo do cliente"></label>
             <label>Telefone<input id="phone" type="tel" placeholder="(00) 00000-0000"></label>
+            <label>CPF/CNPJ<input id="document" placeholder="CPF ou CNPJ"></label>
+            <label>E-mail<input id="email" type="email" placeholder="cliente@email.com"></label>
             <label>Seguradora<select id="insurer" required><option value="">Selecione a seguradora</option><option>HDI Digital</option><option>Bradesco</option><option>Porto</option><option>Yelum</option><option>Mapfre</option><option>Suhai</option><option>Zurich</option><option>Azul</option><option>Itaú</option><option>Mitsui</option></select></label>
             <label>Ramo<select id="branch" required><option value="">Selecione o ramo</option><option>Auto</option><option>Caminhão</option><option>Moto</option><option>Celular</option><option>Empresa</option><option>Vida</option><option>Residência</option><option>Responsabilidade Civil</option><option>Equipamentos</option></select></label>
             <label>Valor do seguro<input id="value" type="number" min="0" step="0.01" required placeholder="0,00"></label>
@@ -90,6 +124,11 @@
             <label>Valor do endosso<input id="endorsementValue" type="number" min="0" step="0.01" placeholder="0,00"></label>
             <label>Tipo do endosso<select id="endorsementType"><option>Pagar</option><option>Restituir</option></select></label>
           </div>
+          <div class="section-title spaced">Pagamento</div>
+          <div class="form-grid">
+            <label>Forma de pagamento<select id="paymentMethod"><option>À vista</option><option>Cartão de crédito</option><option>Boleto</option><option>PIX</option><option>Débito</option></select></label>
+            <label>Quantidade de parcelas<input id="installments" type="number" min="1" max="60" value="1"></label>
+          </div>
           <div class="section-title spaced">Status do seguro</div>
           <div class="form-grid"><label>Status<select id="manualStatus"><option value="Ativo">Ativo</option><option value="Cancelado">Cancelado</option></select></label></div>
           <div class="section-title spaced">Observações</div><label><textarea id="note" placeholder="Adicione uma observação importante sobre o cliente ou o seguro..."></textarea></label>
@@ -98,21 +137,7 @@
         </form>
       </div>
     </section>
-    <footer>PG Seguros <span>•</span> versão 5.6 + Importação de renovações</footer>
-<div id="importModal" class="modal hidden">
-  <div class="modal-backdrop" id="closeImport"></div>
-  <div class="modal-card">
-    <div class="modal-head"><div><h3>Importar renovações do Excel</h3><p>Selecione sua planilha de renovações. O PG Seguros lê todas as abas e reconhece automaticamente as colunas.</p></div><button class="modal-close" id="closeImportBtn">×</button></div>
-    <label class="file-drop">
-      <span class="file-icon">⇩</span><b>Escolher planilha</b><small>Excel (.xlsx, .xls) ou CSV • várias abas</small>
-      <input type="file" id="excelFile" accept=".xlsx,.xls,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel">
-    </label>
-    <div id="importPreview" class="import-preview hidden"></div>
-    <div class="import-help"><b>Planilha de renovações:</b> o sistema procura automaticamente o cabeçalho em cada aba, inclusive quando ele está na linha 3. Reconhece Cliente, Final Vigência, Seguradora, Ramo, Prêmio Anterior e Telefone. O Início da vigência é opcional; a renovação usa a Final da vigência.</div>
-    <div class="actions"><button type="button" class="secondary" id="cancelImport">Cancelar</button><button type="button" class="primary" id="confirmImport" disabled><span>✓</span> Importar clientes</button></div>
-  </div>
-</div>
-
+    <footer>PG Seguros <span>•</span> versão 7.0</footer>
   </main>
 </div>
 <script src="app.js"></script>
