@@ -15,3 +15,6 @@ Atualizações:
 Login:
 Usuário: pgseguros
 Senha: PgBc@2027
+
+
+Importação de renovações: lê todas as abas da planilha, encontra o cabeçalho mesmo quando está na linha 3 e reconhece FINAL VIGÊNCIA, CLIENTE, SEGURADORA, RAMO, PRÊMIO ANTERIOR e TELEFONE. O início da vigência é opcional; a renovação automática usa a Final da vigência.

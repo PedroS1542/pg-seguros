@@ -14,8 +14,10 @@ function state(x){
   const due=renewalDate(x);
   if(!due.y||!due.m) return ["status-ativo","Ativo"];
   // A renovação é definida automaticamente pelo FINAL DA VIGÊNCIA.
-  // No ano do vencimento, durante todo o mês da data final, fica A renovar.
-  const dueYear=Number(x.lastRenewalYear)?Number(x.lastRenewalYear)+1:due.y;
+  // Se a data já é de um ano passado (como em planilhas antigas), usamos
+  // o próximo aniversário anual no ano atual. Se acabou de ser renovado,
+  // a próxima renovação será no mesmo mês do ano seguinte.
+  const dueYear=Number(x.lastRenewalYear)?Number(x.lastRenewalYear)+1:Math.max(due.y,y);
   return (y===dueYear && m===due.m) ? ["status-renovar","A renovar"] : ["status-ativo","Ativo"];
 }
 function showPage(p){
@@ -63,34 +65,68 @@ window.cancelItem=id=>{let x=data.find(v=>v.id===id);if(x&&confirm("Marcar este 
 window.deleteItem=id=>{if(confirm("Excluir este seguro?")){data=data.filter(x=>x.id!==id);save();showPage("seguros")}};
 
 const norm=s=>String(s??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
-const pick=(row,names)=>{for(const n of names){const k=Object.keys(row).find(h=>norm(h)===norm(n));if(k!=null&&String(row[k]??"").trim()!=="")return row[k]}return ""};
-function parseMoney(v){if(typeof v==="number")return v;let s=String(v??"").trim();if(!s)return 0;s=s.replace(/R\$|\s/g,"");if(s.includes(","))s=s.replace(/\./g,"").replace(",",".");return Number(s.replace(/[^0-9.-]/g,""))||0}
-function excelDate(v){if(v instanceof Date&&!isNaN(v))return v.toISOString().slice(0,10);if(typeof v==="number"){const d=new Date(Date.UTC(1899,11,30)+v*86400000);return isNaN(d)?"":d.toISOString().slice(0,10)}let s=String(v??"").trim();if(!s)return "";if(/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)){const [y,m,d]=s.split("-");return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`}let m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);if(m)return `${m[3]}-${String(m[2]).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2})$/);if(m)return `20${m[3]}-${String(m[2]).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;return ""}
+const cleanCell=v=>{if(v==null)return "";if(typeof v==="number"&&Number.isFinite(v))return String(v).replace(/\.0$/,"");return String(v).trim()};
+const pick=(row,names)=>{for(const n of names){const k=Object.keys(row).find(h=>norm(h)===norm(n));if(k!=null&&cleanCell(row[k])!=="")return row[k]}return ""};
+function parseMoney(v){if(typeof v==="number")return v;let s=String(v??"").trim();if(!s)return 0;s=s.replace(/R\$|\s/g,"");if(s.includes(","))s=s.replace(/\./g,"").replace(",", ".");return Number(s.replace(/[^0-9.-]/g,""))||0}
+function excelDate(v){
+ if(v instanceof Date&&!isNaN(v))return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,"0")}-${String(v.getDate()).padStart(2,"0")}`;
+ if(typeof v==="number"&&Number.isFinite(v)){const d=new Date(Date.UTC(1899,11,30)+v*86400000);return isNaN(d)?"":d.toISOString().slice(0,10)}
+ let s=String(v??"").trim();if(!s)return "";
+ if(/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)){const [y,m,d]=s.split("-");return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`}
+ let m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);if(m)return `${m[3]}-${String(m[2]).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;
+ m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2})$/);if(m)return `20${m[3]}-${String(m[2]).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;
+ return "";
+}
 function importRow(row){
- const client=String(pick(row,["Cliente","Nome","Nome Segurado","Segurado","Segurado Nome","Cliente Segurado"])||"").trim();
- const phone=String(pick(row,["Telefone","Celular","Fone","WhatsApp","Telefone Cliente"])||"").trim();
- const insurer=String(pick(row,["Seguradora","Cia","Companhia","Cia Seguradora"])||"").trim();
- const branch=String(pick(row,["Ramo","Modalidade","Produto","Tipo de Seguro"])||"").trim();
- const value=parseMoney(pick(row,["Valor do seguro","Valor","Premio","Prêmio","Premio Total","Prêmio Total","Valor Total","Premio Liquido","Prêmio Líquido"]));
+ const client=cleanCell(pick(row,["Cliente","Nome","Nome Segurado","Segurado","Segurado Nome","Cliente Segurado"]));
+ const phone=cleanCell(pick(row,["Telefone","Celular","Fone","WhatsApp","Telefone Cliente"]));
+ const insurer=cleanCell(pick(row,["Seguradora","Cia","Companhia","Cia Seguradora"]));
+ const branch=cleanCell(pick(row,["Ramo","Modalidade","Produto","Tipo de Seguro"]));
+ const value=parseMoney(pick(row,["Valor do seguro","Valor","Premio","Prêmio","Premio Anterior","Prêmio Anterior","Premio Total","Prêmio Total","Valor Total","Premio Liquido","Prêmio Líquido"]));
  const startDate=excelDate(pick(row,["Inicio da vigencia","Início da vigência","Inicio Vigencia","Data Inicial","Data Inicio","Vigencia Inicial"]));
- const endDate=excelDate(pick(row,["Final da vigencia","Final da vigência","Fim da vigencia","Fim da vigência","Data Final","Data Fim","Vigencia Final","Vencimento"]));
- const claim=String(pick(row,["Teve sinistro","Sinistro","Teve Sinistro?"])||"Não").trim();
- const endorsement=String(pick(row,["Teve endosso","Endosso","Teve Endosso?"])||"Não").trim();
+ const endDate=excelDate(pick(row,["Final da vigencia","Final da vigência","Fim da vigencia","Fim da vigência","Data Final","Data Fim","Vigencia Final","Vencimento","Final Vigência"]));
+ const claim=cleanCell(pick(row,["Teve sinistro","Sinistro","Teve Sinistro?"]))||"Não";
+ const endorsement=cleanCell(pick(row,["Teve endosso","Endosso","Teve Endosso?"]))||"Não";
  const endorsementValue=parseMoney(pick(row,["Valor do endosso","Valor Endosso","Endosso Valor"]));
- const endorsementType=String(pick(row,["Tipo do endosso","Tipo Endosso"])||"Pagar").trim();
- const note=String(pick(row,["Observações","Observacao","Observações Gerais","Notas","Observação"])||"").trim();
+ const endorsementType=cleanCell(pick(row,["Tipo do endosso","Tipo Endosso"]))||"Pagar";
+ const note=cleanCell(pick(row,["Observações","Observacao","Observações Gerais","Notas","Observação"]));
  return {client,phone,insurer,branch,value,startDate,endDate,claim:/^sim$/i.test(claim)?"Sim":"Não",endorsement:/^sim$/i.test(endorsement)?"Sim":"Não",endorsementValue,endorsementType:/restit/i.test(endorsementType)?"Restituir":"Pagar",note};
 }
+
+// Reconhece a estrutura real das planilhas de renovações: várias abas,
+// título nas primeiras linhas e cabeçalho geralmente na linha 3.
+function rowsFromSheet(sheet){
+ const matrix=XLSX.utils.sheet_to_json(sheet,{header:1,defval:"",raw:true});
+ let headerIndex=-1;
+ for(let i=0;i<Math.min(matrix.length,20);i++){
+   const vals=matrix[i].map(cleanCell).map(norm);
+   const hasClient=vals.some(v=>["cliente","segurado","nomesegurado","clientesegurado"].includes(v));
+   const hasFinal=vals.some(v=>["finalvigencia","fimdavigencia","datfinal","datafinal","vencimento"].includes(v)||v.includes("finalvigencia"));
+   if(hasClient&&hasFinal){headerIndex=i;break;}
+ }
+ if(headerIndex<0)return [];
+ const headers=matrix[headerIndex].map((v,i)=>cleanCell(v)||`COLUNA_${i+1}`);
+ return matrix.slice(headerIndex+1).map(row=>{const obj={};headers.forEach((h,i)=>{obj[h]=row[i]??""});return obj;});
+}
+
 let importRows=[];
-function openImport(){$("importModal").classList.remove("hidden");$("excelFile").value="";$("importPreview").classList.add("hidden");$("importPreview").innerHTML="";$("confirmImport").disabled=true;importRows=[]}
+function openImport(){$("importModal").classList.remove("hidden");$("excelFile").value="";$("importPreview").classList.add("hidden");$("importPreview").innerHTML="";$('confirmImport').disabled=true;importRows=[]}
 function closeImport(){$("importModal").classList.add("hidden")}
 $("importExcel")?.addEventListener("click",openImport);$("closeImport")?.addEventListener("click",closeImport);$("closeImportBtn")?.addEventListener("click",closeImport);$("cancelImport")?.addEventListener("click",closeImport);
 $("excelFile")?.addEventListener("change",async e=>{
- const file=e.target.files?.[0];if(!file)return;if(typeof XLSX==="undefined"){alert("Não foi possível carregar o leitor de Excel. Verifique sua conexão com a internet e tente novamente.");return}
+ const file=e.target.files?.[0];if(!file)return;
+ if(typeof XLSX==="undefined"){alert("Não foi possível carregar o leitor de Excel. Verifique sua conexão com a internet e tente novamente.");return}
  try{
-  const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:"array",cellDates:true});const sheet=wb.Sheets[wb.SheetNames[0]];const raw=XLSX.utils.sheet_to_json(sheet,{defval:"",raw:true});importRows=raw.map(importRow).filter(x=>x.client);
-  const missing=importRows.filter(x=>!x.startDate||!x.endDate).length;const noClient=raw.length-importRows.length;
-  $("importPreview").classList.remove("hidden");$("importPreview").innerHTML=`<b>Planilha lida com sucesso.</b><br><strong>${importRows.length}</strong> cliente(s) pronto(s) para importar.${noClient?` <span class="warn">${noClient} linha(s) sem nome foram ignoradas.</span>`:""}${missing?`<br><span class="warn">Atenção: ${missing} cliente(s) estão sem início ou final da vigência; serão importados, mas a renovação automática precisará da data.</span>`:""}<ul>${importRows.slice(0,5).map(x=>`<li>${esc(x.client)} — ${esc(x.insurer||"sem seguradora")} — ${x.startDate?x.startDate.split("-").reverse().join("/"):"sem início"} a ${x.endDate?x.endDate.split("-").reverse().join("/"):"sem final"}</li>`).join("")}</ul>`;
+  const buf=await file.arrayBuffer();
+  const wb=XLSX.read(buf,{type:"array",cellDates:true});
+  const all=[];let sheetsUsed=0;let rawRows=0;
+  wb.SheetNames.forEach(name=>{const rows=rowsFromSheet(wb.Sheets[name]);if(rows.length){sheetsUsed++;rawRows+=rows.length;rows.forEach(row=>{const item=importRow(row);if(item.client)all.push(item)})}});
+  importRows=all;
+  const noClient=rawRows-importRows.length;
+  const missingEnd=importRows.filter(x=>!x.endDate).length;
+  const missingStart=importRows.filter(x=>!x.startDate).length;
+  $("importPreview").classList.remove("hidden");
+  $("importPreview").innerHTML=`<b>Planilha lida com sucesso.</b><br><strong>${importRows.length}</strong> cliente(s) encontrado(s) em <strong>${sheetsUsed}</strong> aba(s).${noClient?` <span class="warn">${noClient} linha(s) sem nome foram ignoradas.</span>`:""}${missingStart?`<br><span class="warn">${missingStart} cliente(s) estão sem início da vigência. Tudo bem: a renovação continuará funcionando pela Final da vigência.</span>`:""}${missingEnd?`<br><span class="warn">${missingEnd} cliente(s) estão sem Final da vigência e não terão renovação automática até essa data ser informada.</span>`:""}<ul>${importRows.slice(0,5).map(x=>`<li>${esc(x.client)} — ${esc(x.insurer||"sem seguradora")} — ${x.endDate?x.endDate.split("-").reverse().join("/"):"sem final"}</li>`).join("")}</ul>`;
   $("confirmImport").disabled=importRows.length===0;
  }catch(err){console.error(err);alert("Não consegui ler essa planilha. Tente novamente com um arquivo Excel (.xlsx/.xls) ou CSV.");importRows=[];$("confirmImport").disabled=true}
 });

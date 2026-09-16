@@ -98,17 +98,17 @@
         </form>
       </div>
     </section>
-    <footer>PG Seguros <span>•</span> versão 5.6 + Importação Excel</footer>
+    <footer>PG Seguros <span>•</span> versão 5.6 + Importação de renovações</footer>
 <div id="importModal" class="modal hidden">
   <div class="modal-backdrop" id="closeImport"></div>
   <div class="modal-card">
-    <div class="modal-head"><div><h3>Importar renovações do Excel</h3><p>Selecione sua planilha e o PG Seguros tentará reconhecer automaticamente as colunas.</p></div><button class="modal-close" id="closeImportBtn">×</button></div>
+    <div class="modal-head"><div><h3>Importar renovações do Excel</h3><p>Selecione sua planilha de renovações. O PG Seguros lê todas as abas e reconhece automaticamente as colunas.</p></div><button class="modal-close" id="closeImportBtn">×</button></div>
     <label class="file-drop">
-      <span class="file-icon">⇩</span><b>Escolher planilha</b><small>Excel (.xlsx, .xls) ou CSV</small>
+      <span class="file-icon">⇩</span><b>Escolher planilha</b><small>Excel (.xlsx, .xls) ou CSV • várias abas</small>
       <input type="file" id="excelFile" accept=".xlsx,.xls,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel">
     </label>
     <div id="importPreview" class="import-preview hidden"></div>
-    <div class="import-help"><b>Colunas reconhecidas:</b> cliente/segurado, telefone, seguradora, ramo, valor/prêmio, início da vigência e final da vigência, sinistro, endosso e observações.</div>
+    <div class="import-help"><b>Planilha de renovações:</b> o sistema procura automaticamente o cabeçalho em cada aba, inclusive quando ele está na linha 3. Reconhece Cliente, Final Vigência, Seguradora, Ramo, Prêmio Anterior e Telefone. O Início da vigência é opcional; a renovação usa a Final da vigência.</div>
     <div class="actions"><button type="button" class="secondary" id="cancelImport">Cancelar</button><button type="button" class="primary" id="confirmImport" disabled><span>✓</span> Importar clientes</button></div>
   </div>
 </div>
