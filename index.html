@@ -7,6 +7,7 @@
 <link rel="icon" type="image/png" href="favicon-pg-seguros.png">
 <title>PG Seguros</title>
 <link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 <div id="login" class="login-page">
@@ -41,7 +42,7 @@
   <main>
     <header>
       <div class="page-heading"><div class="mobile-brand"><img src="favicon-pg-seguros.png" alt="PG Seguros"></div><div><div class="breadcrumb">GESTÃO / <span id="crumb">DASHBOARD</span></div><h2 id="pageTitle">Dashboard</h2><p id="pageSubtitle">Visão geral da sua carteira de seguros</p></div></div>
-      <button class="primary" id="quickNew"><span>＋</span> Novo seguro</button>
+      <div class="header-actions"><button class="secondary" id="importExcel"><span>⇩</span> Importar Excel</button><button class="primary" id="quickNew"><span>＋</span> Novo seguro</button></div>
     </header>
 
     <section id="dashboard" class="page">
@@ -97,7 +98,21 @@
         </form>
       </div>
     </section>
-    <footer>PG Seguros <span>•</span> versão 5.5</footer>
+    <footer>PG Seguros <span>•</span> versão 5.6 + Importação Excel</footer>
+<div id="importModal" class="modal hidden">
+  <div class="modal-backdrop" id="closeImport"></div>
+  <div class="modal-card">
+    <div class="modal-head"><div><h3>Importar renovações do Excel</h3><p>Selecione sua planilha e o PG Seguros tentará reconhecer automaticamente as colunas.</p></div><button class="modal-close" id="closeImportBtn">×</button></div>
+    <label class="file-drop">
+      <span class="file-icon">⇩</span><b>Escolher planilha</b><small>Excel (.xlsx, .xls) ou CSV</small>
+      <input type="file" id="excelFile" accept=".xlsx,.xls,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel">
+    </label>
+    <div id="importPreview" class="import-preview hidden"></div>
+    <div class="import-help"><b>Colunas reconhecidas:</b> cliente/segurado, telefone, seguradora, ramo, valor/prêmio, início da vigência e final da vigência, sinistro, endosso e observações.</div>
+    <div class="actions"><button type="button" class="secondary" id="cancelImport">Cancelar</button><button type="button" class="primary" id="confirmImport" disabled><span>✓</span> Importar clientes</button></div>
+  </div>
+</div>
+
   </main>
 </div>
 <script src="app.js"></script>

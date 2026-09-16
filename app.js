@@ -61,4 +61,41 @@ window.editItem=id=>{let x=data.find(v=>v.id===id);if(!x)return;$("editId").valu
 window.renewItem=id=>{let x=data.find(v=>v.id===id);if(x){x.lastRenewalYear=new Date().getFullYear();x.status="Ativo";save()}};
 window.cancelItem=id=>{let x=data.find(v=>v.id===id);if(x&&confirm("Marcar este seguro como cancelado?")){x.status="Cancelado";save()}};
 window.deleteItem=id=>{if(confirm("Excluir este seguro?")){data=data.filter(x=>x.id!==id);save();showPage("seguros")}};
+
+const norm=s=>String(s??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
+const pick=(row,names)=>{for(const n of names){const k=Object.keys(row).find(h=>norm(h)===norm(n));if(k!=null&&String(row[k]??"").trim()!=="")return row[k]}return ""};
+function parseMoney(v){if(typeof v==="number")return v;let s=String(v??"").trim();if(!s)return 0;s=s.replace(/R\$|\s/g,"");if(s.includes(","))s=s.replace(/\./g,"").replace(",",".");return Number(s.replace(/[^0-9.-]/g,""))||0}
+function excelDate(v){if(v instanceof Date&&!isNaN(v))return v.toISOString().slice(0,10);if(typeof v==="number"){const d=new Date(Date.UTC(1899,11,30)+v*86400000);return isNaN(d)?"":d.toISOString().slice(0,10)}let s=String(v??"").trim();if(!s)return "";if(/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)){const [y,m,d]=s.split("-");return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`}let m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);if(m)return `${m[3]}-${String(m[2]).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2})$/);if(m)return `20${m[3]}-${String(m[2]).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;return ""}
+function importRow(row){
+ const client=String(pick(row,["Cliente","Nome","Nome Segurado","Segurado","Segurado Nome","Cliente Segurado"])||"").trim();
+ const phone=String(pick(row,["Telefone","Celular","Fone","WhatsApp","Telefone Cliente"])||"").trim();
+ const insurer=String(pick(row,["Seguradora","Cia","Companhia","Cia Seguradora"])||"").trim();
+ const branch=String(pick(row,["Ramo","Modalidade","Produto","Tipo de Seguro"])||"").trim();
+ const value=parseMoney(pick(row,["Valor do seguro","Valor","Premio","Prêmio","Premio Total","Prêmio Total","Valor Total","Premio Liquido","Prêmio Líquido"]));
+ const startDate=excelDate(pick(row,["Inicio da vigencia","Início da vigência","Inicio Vigencia","Data Inicial","Data Inicio","Vigencia Inicial"]));
+ const endDate=excelDate(pick(row,["Final da vigencia","Final da vigência","Fim da vigencia","Fim da vigência","Data Final","Data Fim","Vigencia Final","Vencimento"]));
+ const claim=String(pick(row,["Teve sinistro","Sinistro","Teve Sinistro?"])||"Não").trim();
+ const endorsement=String(pick(row,["Teve endosso","Endosso","Teve Endosso?"])||"Não").trim();
+ const endorsementValue=parseMoney(pick(row,["Valor do endosso","Valor Endosso","Endosso Valor"]));
+ const endorsementType=String(pick(row,["Tipo do endosso","Tipo Endosso"])||"Pagar").trim();
+ const note=String(pick(row,["Observações","Observacao","Observações Gerais","Notas","Observação"])||"").trim();
+ return {client,phone,insurer,branch,value,startDate,endDate,claim:/^sim$/i.test(claim)?"Sim":"Não",endorsement:/^sim$/i.test(endorsement)?"Sim":"Não",endorsementValue,endorsementType:/restit/i.test(endorsementType)?"Restituir":"Pagar",note};
+}
+let importRows=[];
+function openImport(){$("importModal").classList.remove("hidden");$("excelFile").value="";$("importPreview").classList.add("hidden");$("importPreview").innerHTML="";$("confirmImport").disabled=true;importRows=[]}
+function closeImport(){$("importModal").classList.add("hidden")}
+$("importExcel")?.addEventListener("click",openImport);$("closeImport")?.addEventListener("click",closeImport);$("closeImportBtn")?.addEventListener("click",closeImport);$("cancelImport")?.addEventListener("click",closeImport);
+$("excelFile")?.addEventListener("change",async e=>{
+ const file=e.target.files?.[0];if(!file)return;if(typeof XLSX==="undefined"){alert("Não foi possível carregar o leitor de Excel. Verifique sua conexão com a internet e tente novamente.");return}
+ try{
+  const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:"array",cellDates:true});const sheet=wb.Sheets[wb.SheetNames[0]];const raw=XLSX.utils.sheet_to_json(sheet,{defval:"",raw:true});importRows=raw.map(importRow).filter(x=>x.client);
+  const missing=importRows.filter(x=>!x.startDate||!x.endDate).length;const noClient=raw.length-importRows.length;
+  $("importPreview").classList.remove("hidden");$("importPreview").innerHTML=`<b>Planilha lida com sucesso.</b><br><strong>${importRows.length}</strong> cliente(s) pronto(s) para importar.${noClient?` <span class="warn">${noClient} linha(s) sem nome foram ignoradas.</span>`:""}${missing?`<br><span class="warn">Atenção: ${missing} cliente(s) estão sem início ou final da vigência; serão importados, mas a renovação automática precisará da data.</span>`:""}<ul>${importRows.slice(0,5).map(x=>`<li>${esc(x.client)} — ${esc(x.insurer||"sem seguradora")} — ${x.startDate?x.startDate.split("-").reverse().join("/"):"sem início"} a ${x.endDate?x.endDate.split("-").reverse().join("/"):"sem final"}</li>`).join("")}</ul>`;
+  $("confirmImport").disabled=importRows.length===0;
+ }catch(err){console.error(err);alert("Não consegui ler essa planilha. Tente novamente com um arquivo Excel (.xlsx/.xls) ou CSV.");importRows=[];$("confirmImport").disabled=true}
+});
+$("confirmImport")?.addEventListener("click",()=>{
+ if(!importRows.length)return;const now=Date.now();const items=importRows.map((x,i)=>({...x,id:crypto.randomUUID(),status:"Ativo",lastRenewalYear:null,createdAt:now+i}));data=[...data,...items];save();closeImport();showPage("seguros");alert(`${items.length} cliente(s) importado(s) com sucesso!`);
+});
+
 function renderAll(){renderDashboard();renderTable()} renderAll();
