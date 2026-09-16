@@ -18,3 +18,6 @@ Senha: PgBc@2027
 
 
 Importação de renovações: lê todas as abas da planilha, encontra o cabeçalho mesmo quando está na linha 3 e reconhece FINAL VIGÊNCIA, CLIENTE, SEGURADORA, RAMO, PRÊMIO ANTERIOR e TELEFONE. O início da vigência é opcional; a renovação automática usa a Final da vigência.
+
+
+Versão 5.7: adicionados botão WhatsApp por cliente e retorno automático ao mesmo cliente/posição após editar e salvar, preservando filtros e busca.
