@@ -1,31 +1,8 @@
-
-/* PG Seguros — Supabase safe initialization */
-const PG_SUPABASE_URL = "https://ipbyeajxoadkhgnipnxx.supabase.co";
-const PG_SUPABASE_KEY = "sb_publishable_m3UnJeROrzKKf6EUtEV-UA_ApDXbZkl";
-let pgSupabase = null;
-let pgSupabaseReady = false;
-
-function initSupabaseSafe(){
-  try{
-    if(window.supabase && typeof window.supabase.createClient === "function"){
-      pgSupabase = window.supabase.createClient(PG_SUPABASE_URL, PG_SUPABASE_KEY);
-      pgSupabaseReady = true;
-      return pgSupabase;
-    }
-  }catch(e){
-    console.warn("Supabase não inicializado:", e);
-  }
-  pgSupabaseReady = false;
-  return null;
-}
-function getSupabaseSafe(){
-  return pgSupabaseReady && pgSupabase ? pgSupabase : initSupabaseSafe();
-}
-
 const $=id=>document.getElementById(id);
 const MONTHS=["","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const SUPABASE_URL="https://ipbyeajxoadkhgnipnxx.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_m3UnJeROrzKKf6EUtEV-UA_ApDXbZkl";
+const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 let data=[];
 let editReturnState=null;
 let dbBusy=false;
@@ -33,13 +10,13 @@ const money=n=>Number(n||0).toLocaleString("pt-BR",{style:"currency",currency:"B
 function fromDb(r){return {id:String(r.id),createdAt:r.created_at?new Date(r.created_at).getTime():Date.now(),client:r.client||"",phone:r.phone||"",insurer:r.insurer||"",branch:r.branch||"",value:Number(r.value||0),startDate:r.start_date||"",endDate:r.end_date||"",claim:r.claim||"Não",endorsement:r.endorsement||"Não",endorsementValue:Number(r.endorsement_value||0),endorsementType:r.endorsement_type||"Pagar",status:r.status||"Ativo",note:r.notes||"",lastRenewalYear:r.last_renewal_year==null?null:Number(r.last_renewal_year)}}
 function toDb(x){return {client:x.client,phone:x.phone,insurer:x.insurer,branch:x.branch,value:Number(x.value||0),start_date:x.startDate||null,end_date:x.endDate||null,claim:x.claim||"Não",endorsement:x.endorsement||"Não",endorsement_value:Number(x.endorsementValue||0),endorsement_type:x.endorsementType||"Pagar",status:x.status||"Ativo",notes:x.note||"",last_renewal_year:x.lastRenewalYear==null?null:Number(x.lastRenewalYear)}}
 async function loadFromSupabase(){
-  const {data:rows,error}=await getSupabaseSafe()?.from("Seguros").select("*").order("created_at",{ascending:false});
+  const {data:rows,error}=await supabase.from("Seguros").select("*").order("created_at",{ascending:false});
   if(error){console.error(error);alert("Não foi possível carregar os seguros do Supabase: "+error.message);return false}
   data=(rows||[]).map(fromDb);renderAll();return true;
 }
-async function insertRecord(x){const {error}=await getSupabaseSafe()?.from("Seguros").insert(toDb(x));if(error)throw error}
-async function updateRecord(x){const {error}=await getSupabaseSafe()?.from("Seguros").update(toDb(x)).eq("id",Number(x.id));if(error)throw error}
-async function deleteRecord(id){const {error}=await getSupabaseSafe()?.from("Seguros").delete().eq("id",Number(id));if(error)throw error}
+async function insertRecord(x){const {error}=await supabase.from("Seguros").insert(toDb(x));if(error)throw error}
+async function updateRecord(x){const {error}=await supabase.from("Seguros").update(toDb(x)).eq("id",Number(x.id));if(error)throw error}
+async function deleteRecord(id){const {error}=await supabase.from("Seguros").delete().eq("id",Number(id));if(error)throw error}
 async function refresh(){return loadFromSupabase()}
 const totalPremium=x=>Number(x.value||0)+(x.endorsement==="Sim"?(x.endorsementType==="Restituir"?-1:1)*Number(x.endorsementValue||0):0);
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
@@ -129,12 +106,10 @@ function importRow(row){
  const value=parseMoney(pick(row,["Valor do seguro","Valor","Premio","Prêmio","Premio Anterior","Prêmio Anterior","Premio Total","Prêmio Total","Valor Total","Premio Liquido","Prêmio Líquido"]));
  const startDate=excelDate(pick(row,["Inicio da vigencia","Início da vigência","Inicio Vigencia","Data Inicial","Data Inicio","Vigencia Inicial"]));
  const endDate=excelDate(pick(row,["Final da vigencia","Final da vigência","Fim da vigencia","Fim da vigência","Data Final","Data Fim","Vigencia Final","Vencimento","Final Vigência"]));
- const claim=cleanCell(pick(row,["Teve sinistro","Sinistro","Teve Sinistro?"]))||"Não";
- const endorsement=cleanCell(pick(row,["Teve endosso","Endosso","Teve Endosso?"]))||"Não";
- const endorsementValue=parseMoney(pick(row,["Valor do endosso","Valor Endosso","Endosso Valor"]));
- const endorsementType=cleanCell(pick(row,["Tipo do endosso","Tipo Endosso"]))||"Pagar";
  const note=cleanCell(pick(row,["Observações","Observacao","Observações Gerais","Notas","Observação"]));
- return {client,phone,insurer,branch,value,startDate,endDate,claim:/^sim$/i.test(claim)?"Sim":"Não",endorsement:/^sim$/i.test(endorsement)?"Sim":"Não",endorsementValue,endorsementType:/restit/i.test(endorsementType)?"Restituir":"Pagar",note};
+ // Esta planilha de renovações fornece somente a FINAL DA VIGÊNCIA como data de renovação.
+ // Não inventamos início da vigência, sinistro ou endosso para os clientes importados.
+ return {client,phone,insurer,branch,value,startDate:"",endDate,claim:"Não",endorsement:"Não",endorsementValue:0,endorsementType:"Pagar",note};
 }
 
 // Reconhece a estrutura real das planilhas de renovações: várias abas,
@@ -178,7 +153,20 @@ $("confirmImport")?.addEventListener("click",async()=>{
  if(!importRows.length||dbBusy)return; dbBusy=true; $("confirmImport").disabled=true;
  try{
   const items=importRows.map(x=>({...x,status:"Ativo",lastRenewalYear:null}));
-  const {error}=await getSupabaseSafe()?.from("Seguros").insert(items.map(toDb));
+  // A importação envia apenas os campos presentes/necessários na planilha.
+  // Assim ela não depende das colunas opcionais de endosso ou sinistro do banco.
+  const importPayload=items.map(x=>({
+    client:x.client,
+    phone:x.phone||null,
+    insurer:x.insurer||null,
+    branch:x.branch||null,
+    value:Number(x.value||0),
+    end_date:x.endDate||null,
+    status:"Ativo",
+    notes:x.note||null,
+    last_renewal_year:null
+  }));
+  const {error}=await supabase.from("Seguros").insert(importPayload);
   if(error)throw error;
   await refresh(); closeImport(); showPage("seguros"); alert(`${items.length} cliente(s) importado(s) com sucesso!`);
  }catch(err){console.error(err);alert("Não foi possível importar para o Supabase: "+err.message)}
@@ -186,44 +174,3 @@ $("confirmImport")?.addEventListener("click",async()=>{
 });
 
 function renderAll(){renderDashboard();renderTable()} renderAll(); loadFromSupabase();
-
-
-document.addEventListener("DOMContentLoaded", function(){
-  setTimeout(initSupabaseSafe, 0);
-});
-
-
-(function(){
-  function showDbStatus(ok, msg){
-    let el=document.getElementById("pgDbStatus");
-    if(!el){
-      el=document.createElement("div");
-      el.id="pgDbStatus";
-      document.body.appendChild(el);
-    }
-    el.className=ok?"ok":"err";
-    el.textContent=msg;
-    setTimeout(()=>{ if(el) el.style.opacity="0"; }, 5000);
-  }
-  window.pgShowDbStatus=showDbStatus;
-  window.pgCheckSupabase=function(){
-    const c=getSupabaseSafe();
-    if(!c){ showDbStatus(false,"Banco: conexão indisponível"); return; }
-    c.from("Seguros").select("id").limit(1).then(({error})=>{
-      if(error) showDbStatus(false,"Banco: verifique a tabela/RLS");
-      else showDbStatus(true,"Banco conectado");
-    }).catch(()=>showDbStatus(false,"Banco: conexão indisponível"));
-  };
-})();
-
-
-/* Fallback: keep the interface usable if Supabase is temporarily unavailable. */
-window.pgDbInsert = async function(payload){
-  const c=getSupabaseSafe();
-  if(c){
-    const r=await c.from("Seguros").insert(payload).select().single();
-    if(!r.error) return r;
-    console.warn("Falha no Supabase INSERT:", r.error);
-  }
-  return {data:null,error:new Error("Supabase indisponível")};
-};

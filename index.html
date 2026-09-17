@@ -8,13 +8,7 @@
 <title>PG Seguros</title>
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-<style>
-#pgDbStatus{position:fixed;right:14px;bottom:14px;z-index:99999;padding:8px 12px;border-radius:10px;
-font:600 12px/1.2 Arial,sans-serif;background:#eef2f7;color:#334155;box-shadow:0 4px 16px rgba(0,0,0,.12)}
-#pgDbStatus.ok{background:#dcfce7;color:#166534}
-#pgDbStatus.err{background:#fee2e2;color:#991b1b}
-</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div id="login" class="login-page">
@@ -122,7 +116,6 @@ font:600 12px/1.2 Arial,sans-serif;background:#eef2f7;color:#334155;box-shadow:0
 
   </main>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script>
 (function(){
