@@ -24,7 +24,3 @@ SUPABASE
 
 IMPORTANTE
 A Publishable key pode aparecer no código de um site público. Não coloque service_role, secret key ou outras chaves secretas no GitHub Pages.
-
-LOGIN DO SISTEMA
-Usuário: pgseguros
-Senha: PgBc@2027
