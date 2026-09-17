@@ -65,7 +65,7 @@
       <div class="panel list-panel">
         <div class="panel-head list-head"><div><h3>Carteira de seguros</h3><p>Pesquise, filtre e gerencie seus clientes.</p></div><span id="resultCount" class="result-count">0 registros</span></div>
         <div class="toolbar"><div class="search-box"><span>⌕</span><input id="search" placeholder="Buscar por cliente, telefone, seguradora ou ramo..."><select id="filterInsurer"><option value="">Todas as seguradoras</option><option>HDI Digital</option><option>Bradesco</option><option>Porto</option><option>Yelum</option><option>Mapfre</option><option>Suhai</option><option>Zurich</option><option>Azul</option><option>Itaú</option><option>Mitsui</option></select><select id="filterBranch"><option value="">Todos os ramos</option><option>Auto</option><option>Caminhão</option><option>Moto</option><option>Celular</option><option>Empresa</option><option>Vida</option><option>Residência</option><option>Responsabilidade Civil</option><option>Equipamentos</option></select></div><select id="filterRenewal"><option value="">Todos os meses</option><option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option><option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option><option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option></select><select id="filterStatus"><option value="">Todos os status</option><option value="Ativo">Ativo</option><option value="A renovar">A renovar</option><option value="Cancelado">Cancelado</option></select></div>
-        <div class="tableWrap"><table><thead><tr><th>CLIENTE</th><th>TELEFONE</th><th>SEGURADORA</th><th>RAMO</th><th>PRÊMIO TOTAL</th><th>RENOVAÇÃO</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody id="tableBody"></tbody></table></div>
+        <div class="tableWrap"><table><thead><tr><th>CLIENTE</th><th>TELEFONE</th><th>SEGURADORA</th><th>RAMO</th><th>PRÊMIO TOTAL</th><th>RENOVAÇÃO</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody id="tableBody"></tbody></table><div id="pgStickyHScroll" class="pg-sticky-hscroll"><div id="pgStickyHScrollInner" class="pg-sticky-hscroll-inner"></div></div></div>
         <div id="empty" class="empty hidden"><div>⌕</div><b>Nenhum seguro encontrado</b><span>Tente mudar os filtros ou cadastrar um novo seguro.</span></div>
       </div>
     </section>
@@ -116,5 +116,25 @@
   </main>
 </div>
 <script src="app.js"></script>
-</body>
+<script>
+(function(){
+ function init(){
+  var w=document.querySelector('#seguros .tableWrap'), b=document.getElementById('pgStickyHScroll'), i=document.getElementById('pgStickyHScrollInner');
+  if(!w||!b||!i)return;
+  var lock=false;
+  function sync(){
+   var need=w.scrollWidth>w.clientWidth+2;
+   i.style.width=Math.max(w.scrollWidth,w.clientWidth)+'px';
+   b.style.display=need?'block':'none';
+   b.scrollLeft=w.scrollLeft;
+  }
+  b.addEventListener('scroll',function(){if(lock)return;lock=true;w.scrollLeft=b.scrollLeft;lock=false},{passive:true});
+  w.addEventListener('scroll',function(){if(lock)return;lock=true;b.scrollLeft=w.scrollLeft;lock=false;});
+  window.addEventListener('resize',sync);
+  new MutationObserver(function(){setTimeout(sync,30)}).observe(w,{childList:true,subtree:true});
+  setTimeout(sync,100);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script></body>
 </html>
