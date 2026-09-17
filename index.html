@@ -116,5 +116,25 @@
   </main>
 </div>
 <script src="app.js"></script>
-</body>
+<div id="pgStickyHScroll" class="pg-sticky-hscroll"><div id="pgStickyHScrollInner" class="pg-sticky-hscroll-inner"></div></div>
+<script>
+(function(){
+function init(){
+ var w=document.querySelector('#page-seguros .table-wrap'),b=document.getElementById('pgStickyHScroll'),i=document.getElementById('pgStickyHScrollInner');
+ if(!w||!b||!i)return;
+ function sync(){
+  var r=w.getBoundingClientRect(), need=w.scrollWidth>w.clientWidth+2, vis=r.bottom>0&&r.top<innerHeight;
+  b.style.display=need&&vis?'block':'none'; i.style.width=Math.max(w.scrollWidth,w.clientWidth)+'px';
+  b.scrollLeft=w.scrollLeft;
+ }
+ var lock=false;
+ b.onscroll=function(){if(!lock){lock=true;w.scrollLeft=b.scrollLeft;lock=false}};
+ w.addEventListener('scroll',function(){if(!lock){lock=true;b.scrollLeft=w.scrollLeft;lock=false}});
+ addEventListener('scroll',sync,{passive:true}); addEventListener('resize',sync);
+ new MutationObserver(function(){setTimeout(sync,50)}).observe(w,{childList:true,subtree:true});
+ setTimeout(sync,100);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script></body>
 </html>
