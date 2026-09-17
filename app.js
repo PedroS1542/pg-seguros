@@ -1,14 +1,27 @@
 const $=id=>document.getElementById(id);
-const KEY="seguros_v2"; const MONTHS=["","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-let data=JSON.parse(localStorage.getItem(KEY)||"[]");
+const MONTHS=["","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const SUPABASE_URL="https://ipbyeajxoadkhgnipnxx.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_m3UnJeROrzKKf6EUtEV-UA_ApDXbZkl";
+const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+let data=[];
 let editReturnState=null;
-data=data.map(x=>({...x,phone:x.phone||"",insurer:x.insurer||"",branch:x.branch||"",startDate:x.startDate||"",endDate:x.endDate||"",claim:x.claim||"Não",endorsement:x.endorsement||"Não",endorsementValue:Number(x.endorsementValue||0),endorsementType:x.endorsementType||"Pagar"}));
+let dbBusy=false;
 const money=n=>Number(n||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+function fromDb(r){return {id:String(r.id),createdAt:r.created_at?new Date(r.created_at).getTime():Date.now(),client:r.client||"",phone:r.phone||"",insurer:r.insurer||"",branch:r.branch||"",value:Number(r.value||0),startDate:r.start_date||"",endDate:r.end_date||"",claim:r.claim||"Não",endorsement:r.endorsement||"Não",endorsementValue:Number(r.endorsement_value||0),endorsementType:r.endorsement_type||"Pagar",status:r.status||"Ativo",note:r.notes||"",lastRenewalYear:r.last_renewal_year==null?null:Number(r.last_renewal_year)}}
+function toDb(x){return {client:x.client,phone:x.phone,insurer:x.insurer,branch:x.branch,value:Number(x.value||0),start_date:x.startDate||null,end_date:x.endDate||null,claim:x.claim||"Não",endorsement:x.endorsement||"Não",endorsement_value:Number(x.endorsementValue||0),endorsement_type:x.endorsementType||"Pagar",status:x.status||"Ativo",notes:x.note||"",last_renewal_year:x.lastRenewalYear==null?null:Number(x.lastRenewalYear)}}
+async function loadFromSupabase(){
+  const {data:rows,error}=await supabase.from("Seguros").select("*").order("created_at",{ascending:false});
+  if(error){console.error(error);alert("Não foi possível carregar os seguros do Supabase: "+error.message);return false}
+  data=(rows||[]).map(fromDb);renderAll();return true;
+}
+async function insertRecord(x){const {error}=await supabase.from("Seguros").insert(toDb(x));if(error)throw error}
+async function updateRecord(x){const {error}=await supabase.from("Seguros").update(toDb(x)).eq("id",Number(x.id));if(error)throw error}
+async function deleteRecord(id){const {error}=await supabase.from("Seguros").delete().eq("id",Number(id));if(error)throw error}
+async function refresh(){return loadFromSupabase()}
 const totalPremium=x=>Number(x.value||0)+(x.endorsement==="Sim"?(x.endorsementType==="Restituir"?-1:1)*Number(x.endorsementValue||0):0);
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const dateParts=x=>{const d=String(x.endDate||x.startDate||""); const [y,m,day]=d.split("-").map(Number); return {y:y||0,m:m||0,d:day||0};};
 const renewalDate=x=>dateParts(x);
-function save(){localStorage.setItem(KEY,JSON.stringify(data));renderAll()}
 function state(x){
   if(x.status==="Cancelado") return ["status-cancelado","Cancelado"];
   const now=new Date(), y=now.getFullYear(), m=now.getMonth()+1;
@@ -29,16 +42,21 @@ function showPage(p){
   if(p==="dashboard")renderDashboard(); if(p==="seguros")renderTable();
 }
 function newForm(){if($("insuranceForm"))$("insuranceForm").reset();$("editId").value="";$("manualStatus").value="Ativo";$("formTitle").textContent="Cadastrar seguro"}
-$("loginForm").addEventListener("submit",e=>{e.preventDefault();if($("username").value==="pgseguros"&&$("password").value==="PgBc@2027"){$("login").classList.add("hidden");$("app").classList.remove("hidden");showPage("dashboard")}else $("loginError").textContent="Usuário ou senha incorretos."});
+$("loginForm").addEventListener("submit",e=>{e.preventDefault();if($("username").value==="pgseguros"&&$("password").value==="PgBc@2027"){$("login").classList.add("hidden");$("app").classList.remove("hidden");showPage("dashboard");loadFromSupabase()}else $("loginError").textContent="Usuário ou senha incorretos."});
 $("logout").onclick=()=>{$("app").classList.add("hidden");$("login").classList.remove("hidden");$("password").value=""};
 document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>b.dataset.page==="novo"?(newForm(),showPage("novo")):showPage(b.dataset.page));
 if($("quickNew"))$("quickNew").onclick=()=>{newForm();showPage("novo")};
 if($("cancelEdit"))$("cancelEdit").onclick=()=>{newForm();showPage("seguros")};
-$("insuranceForm").addEventListener("submit",e=>{
- e.preventDefault(); const id=$("editId").value,old=id?data.find(x=>x.id===id):null;
- const item={id:id||crypto.randomUUID(),client:$("client").value.trim(),phone:$("phone").value.trim(),insurer:$("insurer").value,branch:$("branch").value,value:Number($("value").value),startDate:$("startDate").value,endDate:$("endDate").value,claim:$("claim").value,endorsement:$("endorsement").value,endorsementValue:Number($("endorsementValue").value||0),endorsementType:$("endorsementType").value,status:$("manualStatus").value,note:$("note").value.trim(),lastRenewalYear:id?(old?.lastRenewalYear||null):null,createdAt:old?.createdAt||Date.now()};
- if(id)data=data.map(x=>x.id===id?item:x);else data.push(item);save();showPage("seguros");
- if(id && editReturnState){const ret=editReturnState;editReturnState=null; $("search").value=ret.search||""; $("filterInsurer").value=ret.insurer||""; $("filterBranch").value=ret.branch||""; $("filterRenewal").value=ret.renewal||""; $("filterStatus").value=ret.status||""; renderTable(); const row=document.querySelector(`tr[data-insurance-id="${CSS.escape(id)}"]`); if(row){row.scrollIntoView({behavior:"smooth",block:"center"});row.classList.add("edit-return-highlight");setTimeout(()=>row.classList.remove("edit-return-highlight"),1800)} else window.scrollTo(0,ret.scrollY||0); }
+$("insuranceForm").addEventListener("submit",async e=>{
+ e.preventDefault(); if(dbBusy)return; dbBusy=true;
+ const id=$("editId").value,old=id?data.find(x=>x.id===id):null;
+ const item={id:id||"",client:$("client").value.trim(),phone:$("phone").value.trim(),insurer:$("insurer").value,branch:$("branch").value,value:Number($("value").value),startDate:$("startDate").value,endDate:$("endDate").value,claim:$("claim").value,endorsement:$("endorsement").value,endorsementValue:Number($("endorsementValue").value||0),endorsementType:$("endorsementType").value,status:$("manualStatus").value,note:$("note").value.trim(),lastRenewalYear:id?(old?.lastRenewalYear||null):null,createdAt:old?.createdAt||Date.now()};
+ try{
+   if(id) await updateRecord(item); else await insertRecord(item);
+   await refresh(); showPage("seguros");
+   if(id && editReturnState){const ret=editReturnState;editReturnState=null;$("search").value=ret.search||"";$("filterInsurer").value=ret.insurer||"";$("filterBranch").value=ret.branch||"";$("filterRenewal").value=ret.renewal||"";$("filterStatus").value=ret.status||"";renderTable();const row=document.querySelector(`tr[data-insurance-id="${CSS.escape(id)}"]`);if(row){row.scrollIntoView({behavior:"smooth",block:"center"});row.classList.add("edit-return-highlight");setTimeout(()=>row.classList.remove("edit-return-highlight"),1800)}else window.scrollTo(0,ret.scrollY||0)}}
+ catch(err){console.error(err);alert("Não foi possível salvar o seguro no Supabase: "+err.message)}
+ finally{dbBusy=false}
 });
 function renderDashboard(){
  const now=new Date(), y=now.getFullYear(), m=now.getMonth()+1, today=new Date(y,m-1,now.getDate());
@@ -63,9 +81,9 @@ function renderTable(){
 ["search","filterInsurer","filterBranch","filterRenewal","filterStatus"].forEach(id=>$(id)?.addEventListener("input",renderTable));
 window.editItem=id=>{let x=data.find(v=>v.id===id);if(!x)return;editReturnState={id:x.id,scrollY:window.scrollY,search:$("search").value,insurer:$("filterInsurer").value,branch:$("filterBranch").value,renewal:$("filterRenewal").value,status:$("filterStatus").value};$("editId").value=x.id;$("client").value=x.client||"";$("phone").value=x.phone||"";$("insurer").value=x.insurer||"";$("branch").value=x.branch||"";$("value").value=x.value||"";$("startDate").value=x.startDate||"";$("endDate").value=x.endDate||"";$("claim").value=x.claim||"Não";$("endorsement").value=x.endorsement||"Não";$("endorsementValue").value=x.endorsementValue||"";$("endorsementType").value=x.endorsementType||"Pagar";$("manualStatus").value=x.status==="Cancelado"?"Cancelado":"Ativo";$("note").value=x.note||"";$("formTitle").textContent="Editar seguro";showPage("novo")};
 window.whatsappItem=id=>{const x=data.find(v=>v.id===id);if(!x||!x.phone)return;let digits=String(x.phone).replace(/\\D/g,"");if(digits.startsWith("55"))digits=digits.slice(2);if(digits.length===10||digits.length===11){const msg=encodeURIComponent(`Olá, ${x.client}. Aqui é da PG Seguros. Estou entrando em contato sobre o seu seguro.`);window.open(`https://wa.me/55${digits}?text=${msg}`,"_blank")}else alert("O telefone deste cliente não está em um formato válido para WhatsApp.")};
-window.renewItem=id=>{let x=data.find(v=>v.id===id);if(x){x.lastRenewalYear=new Date().getFullYear();x.status="Ativo";save()}};
-window.cancelItem=id=>{let x=data.find(v=>v.id===id);if(x&&confirm("Marcar este seguro como cancelado?")){x.status="Cancelado";save()}};
-window.deleteItem=id=>{if(confirm("Excluir este seguro?")){data=data.filter(x=>x.id!==id);save();showPage("seguros")}};
+window.renewItem=async id=>{let x=data.find(v=>v.id===id);if(!x||dbBusy)return;dbBusy=true;try{x.lastRenewalYear=new Date().getFullYear();x.status="Ativo";await updateRecord(x);await refresh()}catch(err){console.error(err);alert("Não foi possível marcar como renovado: "+err.message)}finally{dbBusy=false}};
+window.cancelItem=async id=>{let x=data.find(v=>v.id===id);if(!x||dbBusy||!confirm("Marcar este seguro como cancelado?"))return;dbBusy=true;try{x.status="Cancelado";await updateRecord(x);await refresh()}catch(err){console.error(err);alert("Não foi possível cancelar o seguro: "+err.message)}finally{dbBusy=false}};
+window.deleteItem=async id=>{if(dbBusy||!confirm("Excluir este seguro?"))return;dbBusy=true;try{await deleteRecord(id);await refresh();showPage("seguros")}catch(err){console.error(err);alert("Não foi possível excluir o seguro: "+err.message)}finally{dbBusy=false}};
 
 const norm=s=>String(s??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
 const cleanCell=v=>{if(v==null)return "";if(typeof v==="number"&&Number.isFinite(v))return String(v).replace(/\.0$/,"");return String(v).trim()};
@@ -133,8 +151,15 @@ $("excelFile")?.addEventListener("change",async e=>{
   $("confirmImport").disabled=importRows.length===0;
  }catch(err){console.error(err);alert("Não consegui ler essa planilha. Tente novamente com um arquivo Excel (.xlsx/.xls) ou CSV.");importRows=[];$("confirmImport").disabled=true}
 });
-$("confirmImport")?.addEventListener("click",()=>{
- if(!importRows.length)return;const now=Date.now();const items=importRows.map((x,i)=>({...x,id:crypto.randomUUID(),status:"Ativo",lastRenewalYear:null,createdAt:now+i}));data=[...data,...items];save();closeImport();showPage("seguros");alert(`${items.length} cliente(s) importado(s) com sucesso!`);
+$("confirmImport")?.addEventListener("click",async()=>{
+ if(!importRows.length||dbBusy)return; dbBusy=true; $("confirmImport").disabled=true;
+ try{
+  const items=importRows.map(x=>({...x,status:"Ativo",lastRenewalYear:null}));
+  const {error}=await supabase.from("Seguros").insert(items.map(toDb));
+  if(error)throw error;
+  await refresh(); closeImport(); showPage("seguros"); alert(`${items.length} cliente(s) importado(s) com sucesso!`);
+ }catch(err){console.error(err);alert("Não foi possível importar para o Supabase: "+err.message)}
+ finally{dbBusy=false;$("confirmImport").disabled=importRows.length===0}
 });
 
-function renderAll(){renderDashboard();renderTable()} renderAll();
+function renderAll(){renderDashboard();renderTable()} renderAll(); loadFromSupabase();

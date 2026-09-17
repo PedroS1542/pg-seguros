@@ -1,23 +1,30 @@
-PG SEGUROS — versão 5.1
+PG SEGUROS — VERSÃO 6.2 + SUPABASE
 
-Atualizações:
-- Removidos do Dashboard: quantidade da carteira, valor total e ticket médio.
-- Mantido no Dashboard o alerta de renovações do mês e a lista de próximas renovações.
-- Novo seguro agora possui Início da vigência e Final da vigência.
-- Ao cadastrar um seguro novo, o status começa sempre como Ativo, mesmo se o mês de renovação informado for o mês atual.
-- No próximo ciclo anual, quando chegar o mês da renovação, o status muda para A renovar (amarelo).
-- Enquanto estiver A renovar, aparece a ação Marcar renovado.
-- Ao marcar como renovado, o seguro volta para Ativo e fica preparado para o próximo ano.
-- Cancelado continua disponível como status manual.
-- Mantidos telefone, seguradora, ramo, sinistro, endosso e cálculo do prêmio total.
-- Novo seguro continua abrindo formulário limpo automaticamente.
+Esta versão mantém os recursos do PG Seguros e passa o cadastro, edição, cancelamento, exclusão, renovação e importação de Excel a usar o banco Supabase.
 
-Login:
+RECURSOS
+- Dashboard profissional
+- Cadastro de seguros
+- Início e final da vigência
+- Renovação automática pela Final da Vigência
+- Status Ativo / A renovar / Cancelado
+- Marcar renovado
+- Importação de Excel com várias abas
+- WhatsApp por cliente
+- Retorno para o mesmo cliente após edição
+- Rolagem vertical dentro da tabela
+- Logo e favicon PG Seguros
+- Supabase conectado ao banco public.Seguros
+
+SUPABASE
+- Project URL configurada no app.js
+- Publishable key configurada no app.js
+- A tabela usada é public.Seguros
+- As operações dependem das políticas RLS criadas no Supabase
+
+IMPORTANTE
+A Publishable key pode aparecer no código de um site público. Não coloque service_role, secret key ou outras chaves secretas no GitHub Pages.
+
+LOGIN DO SISTEMA
 Usuário: pgseguros
 Senha: PgBc@2027
-
-
-Importação de renovações: lê todas as abas da planilha, encontra o cabeçalho mesmo quando está na linha 3 e reconhece FINAL VIGÊNCIA, CLIENTE, SEGURADORA, RAMO, PRÊMIO ANTERIOR e TELEFONE. O início da vigência é opcional; a renovação automática usa a Final da vigência.
-
-
-Versão 5.7: adicionados botão WhatsApp por cliente e retorno automático ao mesmo cliente/posição após editar e salvar, preservando filtros e busca.
