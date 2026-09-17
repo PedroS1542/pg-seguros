@@ -2,7 +2,24 @@ const $=id=>document.getElementById(id);
 const MONTHS=["","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const SUPABASE_URL="https://ipbyeajxoadkhgnipnxx.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_m3UnJeROrzKKf6EUtEV-UA_ApDXbZkl";
-const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+let supabaseClient = null;
+
+function validarLoginLocal(usuario, senha) {
+  return String(usuario || '').trim() === 'pgseguros' &&
+         String(senha || '') === 'PgBc@2027';
+}
+
+function getSupabaseClient() {
+  if (supabaseClient) return supabaseClient;
+  try {
+    if (!window.supabase || typeof window.supabase.createClient !== 'function') return null;
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    return supabaseClient;
+  } catch (e) {
+    console.warn('Supabase indisponível no momento:', e);
+    return null;
+  }
+}
 let data=[];
 let editReturnState=null;
 let dbBusy=false;
@@ -10,13 +27,13 @@ const money=n=>Number(n||0).toLocaleString("pt-BR",{style:"currency",currency:"B
 function fromDb(r){return {id:String(r.id),createdAt:r.created_at?new Date(r.created_at).getTime():Date.now(),client:r.client||"",phone:r.phone||"",insurer:r.insurer||"",branch:r.branch||"",value:Number(r.value||0),startDate:r.start_date||"",endDate:r.end_date||"",claim:r.claim||"Não",endorsement:r.endorsement||"Não",endorsementValue:Number(r.endorsement_value||0),endorsementType:r.endorsement_type||"Pagar",status:r.status||"Ativo",note:r.notes||"",lastRenewalYear:r.last_renewal_year==null?null:Number(r.last_renewal_year)}}
 function toDb(x){return {client:x.client,phone:x.phone,insurer:x.insurer,branch:x.branch,value:Number(x.value||0),start_date:x.startDate||null,end_date:x.endDate||null,claim:x.claim||"Não",endorsement:x.endorsement||"Não",endorsement_value:Number(x.endorsementValue||0),endorsement_type:x.endorsementType||"Pagar",status:x.status||"Ativo",notes:x.note||"",last_renewal_year:x.lastRenewalYear==null?null:Number(x.lastRenewalYear)}}
 async function loadFromSupabase(){
-  const {data:rows,error}=await supabase.from("Seguros").select("*").order("created_at",{ascending:false});
+  const {data:rows,error}=await getSupabaseClient()?.from("Seguros").select("*").order("created_at",{ascending:false});
   if(error){console.error(error);alert("Não foi possível carregar os seguros do Supabase: "+error.message);return false}
   data=(rows||[]).map(fromDb);renderAll();return true;
 }
-async function insertRecord(x){const {error}=await supabase.from("Seguros").insert(toDb(x));if(error)throw error}
-async function updateRecord(x){const {error}=await supabase.from("Seguros").update(toDb(x)).eq("id",Number(x.id));if(error)throw error}
-async function deleteRecord(id){const {error}=await supabase.from("Seguros").delete().eq("id",Number(id));if(error)throw error}
+async function insertRecord(x){const {error}=await getSupabaseClient()?.from("Seguros").insert(toDb(x));if(error)throw error}
+async function updateRecord(x){const {error}=await getSupabaseClient()?.from("Seguros").update(toDb(x)).eq("id",Number(x.id));if(error)throw error}
+async function deleteRecord(id){const {error}=await getSupabaseClient()?.from("Seguros").delete().eq("id",Number(id));if(error)throw error}
 async function refresh(){return loadFromSupabase()}
 const totalPremium=x=>Number(x.value||0)+(x.endorsement==="Sim"?(x.endorsementType==="Restituir"?-1:1)*Number(x.endorsementValue||0):0);
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
@@ -166,7 +183,7 @@ $("confirmImport")?.addEventListener("click",async()=>{
     notes:x.note||null,
     last_renewal_year:null
   }));
-  const {error}=await supabase.from("Seguros").insert(importPayload);
+  const {error}=await getSupabaseClient()?.from("Seguros").insert(importPayload);
   if(error)throw error;
   await refresh(); closeImport(); showPage("seguros"); alert(`${items.length} cliente(s) importado(s) com sucesso!`);
  }catch(err){console.error(err);alert("Não foi possível importar para o Supabase: "+err.message)}
