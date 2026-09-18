@@ -1,4 +1,4 @@
-PG SEGUROS — VERSÃO 6.2 + SUPABASE
+PG SEGUROS — VERSÃO 6.9 + SUPABASE
 
 Esta versão mantém os recursos do PG Seguros e passa o cadastro, edição, cancelamento, exclusão, renovação e importação de Excel a usar o banco Supabase.
 
