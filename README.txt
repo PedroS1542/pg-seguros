@@ -24,3 +24,15 @@ SUPABASE
 
 IMPORTANTE
 A Publishable key pode aparecer no código de um site público. Não coloque service_role, secret key ou outras chaves secretas no GitHub Pages.
+
+ATUALIZAÇÃO — ENDOSSO E SINISTRO
+Antes de usar os campos de endosso no cadastro/edição, execute no SQL Editor do Supabase:
+
+ALTER TABLE "Seguros"
+  ADD COLUMN IF NOT EXISTS claim text DEFAULT 'Não',
+  ADD COLUMN IF NOT EXISTS endorsement text DEFAULT 'Não',
+  ADD COLUMN IF NOT EXISTS endorsement_value numeric DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS endorsement_type text DEFAULT 'Pagar';
+
+Os campos de endosso e sinistro agora são gravados ao cadastrar e ao editar. Na carteira, seguros com sinistro exibem “Sinistro” e seguros com endosso exibem “Endosso” e o valor do endosso quando informado.
+
