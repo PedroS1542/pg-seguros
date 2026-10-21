@@ -1,9 +1,12 @@
-PG SEGUROS — VERSÃO 7.0 + SUPABASE
+PG SEGUROS — VERSÃO 7.4 | REDESIGN VISUAL + SUPABASE
 
 Esta versão mantém os recursos do PG Seguros e passa o cadastro, edição, cancelamento, exclusão, renovação e importação de Excel a usar o banco Supabase.
 
 RECURSOS
-- Dashboard profissional
+- Interface redesenhada com identidade visual corporativa em azul-marinho, azul e dourado
+- Tela de login em duas colunas, com apresentação da marca e formulário de acesso
+- Layout responsivo para computador, tablet e celular
+- Dashboard profissional com maior hierarquia visual
 - Cadastro de seguros
 - Início e final da vigência
 - Renovação automática pela Final da Vigência
@@ -34,5 +37,5 @@ ALTER TABLE "Seguros"
   ADD COLUMN IF NOT EXISTS endorsement_value numeric DEFAULT 0,
   ADD COLUMN IF NOT EXISTS endorsement_type text DEFAULT 'Pagar';
 
-Os campos de endosso e sinistro agora são gravados ao cadastrar e ao editar. Na carteira, seguros com sinistro exibem “Sinistro” e seguros com endosso exibem “Endosso” e o valor do endosso quando informado.
+Os campos de endosso e sinistro agora são gravados ao cadastrar e ao editar. Na carteira, seguros com sinistro exibem “Sinistro” e seguros com endosso exibem “Endosso” sem exibir o valor na etiqueta. O valor continua salvo e é incorporado ao prêmio total: “Pagar” soma e “Restituir” subtrai.
 
