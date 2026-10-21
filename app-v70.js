@@ -74,6 +74,10 @@ $("insuranceForm").addEventListener("submit",async e=>{
 });
 function renderDashboard(){
  const now=new Date(), y=now.getFullYear(), m=now.getMonth()+1, today=new Date(y,m-1,now.getDate());
+ const dateLabel=new Intl.DateTimeFormat("pt-BR",{weekday:"long",day:"2-digit",month:"long"}).format(now);
+ const todayCount=data.filter(x=>{const d=new Date(Number(x.createdAt)||0);return d.getFullYear()===y&&d.getMonth()===now.getMonth()&&d.getDate()===now.getDate()}).length;
+ if($("todayCount")) $("todayCount").textContent=`${todayCount} ${todayCount===1?"seguro":"seguros"}`;
+ if($("todayDate")) $("todayDate").textContent=dateLabel.charAt(0).toUpperCase()+dateLabel.slice(1);
  const active=data.filter(x=>state(x)[1]==="Ativo").length;
  const renewing=data.filter(x=>state(x)[1]==="A renovar");
  $("activeCount").textContent=active; $("renewalCount").textContent=renewing.length;
